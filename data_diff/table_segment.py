@@ -266,7 +266,9 @@ class TableSegment:
         result = tuple(self.database.query(select, tuple))
 
         if any(i is None for i in result):
-            raise ValueError("Table appears to be empty")
+            logger.warning("Table appears to be empty. Treating as success.")
+            exit(0)
+            # raise ValueError("Table appears to be empty")
 
         # Min/max keys are interleaved
         min_key, max_key = result[::2], result[1::2]

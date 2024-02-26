@@ -32,6 +32,9 @@ import contextvars
 import attrs
 from typing_extensions import Self
 
+from psycopg2 import OperationalError
+from psycopg2.errors import QueryCanceled
+
 from data_diff.abcs.compiler import AbstractCompiler, Compilable
 from data_diff.queries.extras import ApplyFuncAndNormalizeAsString, Checksum, NormalizeAsString
 from data_diff.schema import RawColumnInfo
@@ -537,6 +540,7 @@ class BaseDialect(abc.ABC):
             select = f"({select}) {c.new_unique_name()}"
         elif parent_c.in_join:
             select = f"({select})"
+        logger.info(select)
         return select
 
     def render_join(self, parent_c: Compiler, elem: Join) -> str:
@@ -1169,18 +1173,24 @@ class Database(abc.ABC):
 
     def _query_cursor(self, c, sql_code: str) -> QueryResult:
         assert isinstance(sql_code, str), sql_code
-        try:
-            c.execute(sql_code)
-            if sql_code.lower().startswith(("select", "explain", "show")):
-                columns = [col[0] for col in c.description]
+        max_retries = 10
+        for retry in range(max_retries):
+            try:
+                c.execute(sql_code)
+                if sql_code.lower().startswith(("select", "explain", "show")):
+                    columns = [col[0] for col in c.description]
 
-                fetched = c.fetchall()
-                result = QueryResult(fetched, columns)
-                return result
-        except Exception as _e:
-            # logger.exception(e)
-            # logger.error(f"Caused by SQL: {sql_code}")
-            raise
+                    fetched = c.fetchall()
+                    result = QueryResult(fetched, columns)
+                    return result
+            except (OperationalError, QueryCanceled):
+                if retry == max_retries - 1:
+                    raise
+                c.execute("ROLLBACK")
+            except Exception as _e:
+                # logger.exception(e)
+                # logger.error(f"Caused by SQL: {sql_code}")
+                raise
 
     def _query_conn(self, conn, sql_code: Union[str, ThreadLocalInterpreter]) -> QueryResult:
         c = conn.cursor()

@@ -408,8 +408,8 @@ def _get_table_differ(
 
     assert algorithm == Algorithm.HASHDIFF
     return HashDiffer(
-        bisection_factor=DEFAULT_BISECTION_FACTOR if bisection_factor is None else bisection_factor,
-        bisection_threshold=DEFAULT_BISECTION_THRESHOLD if bisection_threshold is None else bisection_threshold,
+        bisection_factor=DEFAULT_BISECTION_FACTOR if bisection_factor is None else int(bisection_factor),
+        bisection_threshold=DEFAULT_BISECTION_THRESHOLD if bisection_threshold is None else int(bisection_threshold),
         threaded=threaded,
         max_threadpool_size=threads and threads * 2,
     )
