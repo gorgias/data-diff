@@ -3,7 +3,7 @@ set -euo pipefail
 
 PGUSER=${PGUSER:-gorgias}
 DOMAIN=${DOMAIN:-com}
-BISECT_FACTOR=${BISECT_FACTOR:-128}
+BISECT_FACTOR=${BISECT_FACTOR:-512}
 MAX_PARALLEL_ACCOUNT_DIFFS=${MAX_PARALLEL_ACCOUNT_DIFFS:-16}
 CURRENT_PARALLEL_ACCOUNTS_COUNT=0
 
@@ -18,7 +18,7 @@ diff_account_id() {
 
   # Do not add account_id to key columns or the range selection will slow the query down
   if ! docker run --rm gcr.io/gorgias-ops-production/data-diff:v0.11.1-modded "postgresql://${PGUSER}:${PGPASSWORD}@pgreplicas-${CLUSTER_NAME}.gorgias.${DOMAIN}:5432/gorgias" ticket_message ticket_message_part --no-tracking \
-    --stats \
+    --limit 10 \
     --key-columns id \
     --columns account_id \
     --columns ticket_id \
@@ -76,9 +76,9 @@ while true; do
 
   # pop the first MAX_PARALLEL_ACCOUNT_DIFFS account_id items from the list
   concurrent_account_ids=$(echo $account_ids | awk -v n=$MAX_PARALLEL_ACCOUNT_DIFFS '{for (i=1; i<=n; i++) {print $i}}')
-  echo -e "===== concurrent_account_ids: \n${concurrent_account_ids}\n-----"
+  echo -e "===== concurrent_account_ids: \n${concurrent_account_ids}\n"
   account_ids=$(echo $account_ids | awk -v n=$MAX_PARALLEL_ACCOUNT_DIFFS '{for (i=n+1; i<=NF; i++) {print $i}}')
-  echo -e "===== remaining account_ids: \n${account_ids}\n-----"
+  echo -e "===== remaining account_ids: \n${account_ids}\n"
 
   for id in $concurrent_account_ids; do
     echo "===== Diffing account_id: $id"

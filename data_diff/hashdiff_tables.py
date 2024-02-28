@@ -160,11 +160,11 @@ class HashDiffer(TableDiffer):
         for t in [table1, table2]:
             for c in t.relevant_columns:
                 ctype = t._schema[c]
-                if not ctype.supported:
-                    logger.warning(
-                        f"[{t.database.name}] Column '{c}' of type '{ctype}' has no compatibility handling. "
-                        "If encoding/formatting differs between databases, it may result in false positives."
-                    )
+                # if not ctype.supported:
+                #     logger.warning(
+                #         f"[{t.database.name}] Column '{c}' of type '{ctype}' has no compatibility handling. "
+                #         "If encoding/formatting differs between databases, it may result in false positives."
+                #     )
 
     def _diff_segments(
         self,

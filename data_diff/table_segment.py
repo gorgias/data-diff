@@ -17,7 +17,7 @@ from data_diff.queries.extras import ApplyFuncAndNormalizeAsString, NormalizeAsS
 
 logger = logging.getLogger("table_segment")
 
-RECOMMENDED_CHECKSUM_DURATION = 20
+RECOMMENDED_CHECKSUM_DURATION = 120
 
 
 def split_key_space(min_key: DbKey, max_key: DbKey, count: int) -> List[DbKey]:
